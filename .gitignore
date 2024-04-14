@@ -6,6 +6,6 @@ build
 
 .idea
 
-**-$*.xlsx
+**~$*.xlsx
 
 .DS_Store
