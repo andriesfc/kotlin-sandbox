@@ -2,6 +2,7 @@
 
 import buildlogic.catalog
 import buildlogic.lib
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
 plugins {
@@ -22,7 +23,14 @@ testing {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-Xjsr305=strict")
+        freeCompilerArgs.add("-Xjdk-release=21")
     }
 }
 

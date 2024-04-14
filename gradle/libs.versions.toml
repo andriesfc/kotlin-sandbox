@@ -1,11 +1,23 @@
 [versions]
-kotlin-gradle-plugin = "1.9.22"
-kotest = "5.8.0"
+kotlin-gradle-plugin = "1.9.23"
+kotest = "5.8.1"
+poi = "5.2.5"
+picocli = "4.7.5"
+slf4j = "2.0.13"
+
+
 
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-gradle-plugin" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+poi-ooxml-full = { module = "org.apache.poi:poi-ooxml-full", version.ref = "poi" }
+poi = { module = "org.apache.poi:poi", version.ref = "poi" }
+poi-ooxml = {module = "org.apache.poi:poi-ooxml", version.ref = "poi"}
+picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+slf4j-jdk-platform-logging = { module = "org.slf4j:slf4j-jdk-platform-logging", version.ref = "slf4j" }
 
-
+# implementation("org.apache.poi:poi-ooxml:5.2.5")

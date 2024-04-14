@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package sandbox.utils
 
 import java.util.*
@@ -6,60 +8,84 @@ data class Version(
     val major: Int,
     val minor: Int = 0,
     val micro: Int = 0,
-    val qualifier: Qualifer? = null,
+    val qualifier: Qualifier? = null,
 ) : Comparable<Version> {
 
-    class Qualifer(
-        val value: String,
-        val prefix: Prefix,
+    constructor(
+        major: Int,
+        minor: Int,
+        micro: Int,
+        buildInfo: String,
+    ) : this(major, minor, micro, Qualifier.parse(buildInfo))
+
+    fun isRelease(): Boolean = qualifier == null || qualifier.indicator.release
+
+    class Qualifier internal constructor(
+        val name: String,
+        val indicator: Indicator,
     ) {
         override fun equals(other: Any?): Boolean {
             return when {
                 other === this -> true
                 other == null || other.javaClass != javaClass -> false
-                else -> (value == (other as Qualifer).value) && (prefix == other.prefix)
+                else -> (name == (other as Qualifier).name) && (indicator == other.indicator)
             }
         }
 
-        override fun toString() = value
-        val namePart: String
-            get() = "${prefix.value}$value"
-
+        override fun toString() = "${indicator.value}$name"
         override fun hashCode(): Int {
             return Objects.hash(
-                value,
-                prefix
+                name,
+                indicator
             )
         }
 
-        enum class Prefix(internal val value: Char) {
-            DASH('-'),
-            UNDERSCORE('_');
-
-            companion object {
-                @JvmStatic
-                fun of(char: Char): Prefix = entries
-                    .firstOrNull { it.value == char }
-                    ?: throw IllegalArgumentException("Invalid qualifier prefix: $char")
-            }
+        enum class Indicator(val value: Char, val release: Boolean) {
+            Dash('-', false),
+            Underscore('_', true),
+            Plus('+', true);
         }
 
+        companion object {
+            fun parse(qualifierStr: String): Qualifier? {
+
+                if (qualifierStr.isBlank())
+                    return null
+
+                require(qualifierStr.length > 1) {
+                    "version qualifer must be 1 or more"
+                }
+
+                val ind = requireNotNull(Indicator.entries.firstOrNull { it.value == qualifierStr.first() }) {
+                    "invalid build qualifer [$qualifierStr]. Note qualifier must start with any of the following: ${
+                        Indicator.entries.joinToString { it.value.toString() }
+                    }"
+                }
+
+                return Qualifier(qualifierStr.substring(1), ind)
+            }
+        }
     }
 
+    override fun compareTo(other: Version): Int = Ordering.compare(this, other)
 
-    override fun compareTo(other: Version): Int = naturalOrdering.compare(this, other)
+    override fun toString(): String = "$major.$minor.$micro${qualifier?.toString() ?: ""}"
 
-    override fun toString(): String = "$major.$minor.$micro${qualifier?.let { qualifier.namePart } ?: ""}"
 
-    companion object {
-
-        val naturalOrdering = compareBy(
+    object Ordering : Comparator<Version> by compareBy(
+        Version::major,
+        Version::minor,
+        Version::micro,
+        Version::isRelease
+    ) {
+        val latestFirst: Comparator<Version> = compareBy(
             Version::major,
             Version::minor,
             Version::micro
-        )
+        ).reversed().thenComparing(Version::isRelease)
+    }
 
-        val latestFirsOrdering: Comparator<Version> = naturalOrdering.reversed()
+    companion object {
 
         /**
          * Semantic version regular expression.
@@ -74,20 +100,16 @@ data class Version(
          */
         private val regex =
             Regex(
-                """[-_]?(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:[-_](\w[\w.\-]*))?)?"""
+                """[-_]?(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?([-_+]\w[\w.\-]*)?)?"""
             )
 
-        fun of(versionString: String): Version? {
+        fun parse(versionString: String): Version? {
             val m = regex.find(versionString) ?: return null
             return Version(
                 major = m.groups[1]?.value?.toIntOrNull() ?: 0,
                 minor = m.groups[2]?.value?.toIntOrNull() ?: 0,
                 micro = m.groups[3]?.value?.toIntOrNull() ?: 0,
-                qualifier = m.groups[4]?.let { g ->
-                    val value = versionString.substring(g.range.first)
-                    val prefix: Qualifer.Prefix = Qualifer.Prefix.of(versionString[g.range.first - 1])
-                    Qualifer(value, prefix)
-                }
+                qualifier = m.groups[4]?.value?.run(Qualifier::parse)
             )
         }
 
@@ -97,11 +119,10 @@ data class Version(
          * @param string
          * @return Either a range, or `null` if none could be found.
          */
-        fun locate(string: String): IntRange? {
+        fun find(string: String): IntRange? {
             val m = regex.find(string)?.groups?.first() ?: return null
             return m.range
         }
 
     }
 }
-

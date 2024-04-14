@@ -5,3 +5,7 @@
 build
 
 .idea
+
+**-$*.xlsx
+
+.DS_Store
